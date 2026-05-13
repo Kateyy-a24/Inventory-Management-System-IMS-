@@ -1,0 +1,302 @@
+"""
+Inventory Management System (IMS) - Philippines Version
+=====================================================
+A Python-based Point-of-Sale (POS) system demonstrating:
+1. Binary Search Tree (BST) - Product Inventory Management
+2. Queue - Order Processing
+3. Binary Search - Fast Product Lookup
+
+Author: Kate S. Pangasian
+Course: Data Structures and Algorithms
+"""
+
+
+class Node:
+    """Binary Search Tree Node"""
+
+    def __init__(self, item_number):
+        self.item_number = item_number  # Changed from 'key' to 'item_number'
+        self.product_name = ""
+        self.price = 0
+        self.stock = 0
+        self.left = None
+        self.right = None
+
+
+class BST:
+    """Binary Search Tree for Product Inventory"""
+
+    def __init__(self):
+        self.root = None
+
+    def insert(self, item_number, name, price, stock):
+        """Insert product into BST (O(log n) average)"""
+        self.root = self._insert_recursive(self.root, item_number, name, price, stock)
+
+    def _insert_recursive(self, node, item_number, name, price, stock):
+        if node is None:
+            new_node = Node(item_number)
+            new_node.product_name = name
+            new_node.price = price
+            new_node.stock = stock
+            return new_node
+
+        if item_number < node.item_number:
+            node.left = self._insert_recursive(node.left, item_number, name, price, stock)
+        elif item_number > node.item_number:
+            node.right = self._insert_recursive(node.right, item_number, name, price, stock)
+        else:
+            # Update existing product
+            node.product_name = name
+            node.price = price
+            node.stock = stock
+        return node
+
+    def binary_search(self, item_number):
+        """Binary Search on BST (O(log n))"""
+        return self._search_recursive(self.root, item_number)
+
+    def _search_recursive(self, node, item_number):
+        if node is None:
+            return None
+
+        if item_number == node.item_number:
+            return node
+        elif item_number < node.item_number:
+            return self._search_recursive(node.left, item_number)
+        else:
+            return self._search_recursive(node.right, item_number)
+
+    def inorder_traversal(self):
+        """In-order traversal for sorted display (O(n))"""
+        result = []
+        self._inorder_helper(self.root, result)
+        return result
+
+    def _inorder_helper(self, node, result):
+        if node:
+            self._inorder_helper(node.left, result)
+            result.append({
+                'item_number': node.item_number,
+                'name': node.product_name,
+                'price': node.price,
+                'stock': node.stock
+            })
+            self._inorder_helper(node.right, result)
+
+    def update_stock(self, item_number, quantity_sold):
+        """Update stock after sale"""
+        node = self.binary_search(item_number)
+        if node and node.stock >= quantity_sold:
+            node.stock -= quantity_sold
+            return True
+        return False
+
+
+class Queue:
+    """Queue for Order Processing (FIFO)"""
+
+    def __init__(self):
+        self.items = []
+
+    def enqueue(self, order):
+        """Add order to queue (O(1))"""
+        self.items.append(order)
+        print(f" Order #{order['id']} added to processing queue")
+
+    def dequeue(self):
+        """Process next order (O(1))"""
+        if not self.is_empty():
+            return self.items.pop(0)
+        return None
+
+    def peek(self):
+        """View next order (O(1))"""
+        if not self.is_empty():
+            return self.items[0]
+        return None
+
+    def is_empty(self):
+        """Check if queue is empty (O(1))"""
+        return len(self.items) == 0
+
+    def size(self):
+        """Get queue size (O(1))"""
+        return len(self.items)
+
+    def display_queue(self):
+        """Display current queue"""
+        if self.is_empty():
+            print(" Queue is empty")
+        else:
+            print(" Current Processing Queue:")
+            for i, order in enumerate(self.items, 1):
+                print(f"  {i}. Order #{order['id']} - Total: ₱{order['total']:,.2f}")
+
+
+class InventorySystem:
+    """Main Inventory Management System"""
+
+    def __init__(self):
+        self.bst = BST()
+        self.order_queue = Queue()
+        self.next_order_id = 1
+        self._initialize_sample_data()
+
+    def _initialize_sample_data(self):
+        """Initialize with sample products (Philippine prices)"""
+        products = [
+            (1, "Laptop Dell XPS 13", 69999, 15),
+            (2, "Samsung Galaxy S24", 45999, 25),
+            (3, "iPhone 15", 52999, 20),
+            (4, "Logitech MK295 Kit", 2499, 50),
+            (5, "Razer DeathAdder Mouse", 3599, 75),
+            (6, "Sony WH-1000XM5", 24999, 20),
+            (7, "Samsung 980 PRO 1TB SSD", 5999, 40)
+        ]
+
+        for item_no, name, price, stock in products:
+            self.bst.insert(item_no, name, price, stock)
+        print("Sample data loaded!")
+
+    def add_product(self, item_number, name, price, stock):
+        """Add new product"""
+        self.bst.insert(item_number, name, price, stock)
+        print(f" Product '{name}' (Item No: {item_number}) added successfully!")
+
+    def search_product(self, item_number):
+        """Search product using Binary Search"""
+        product = self.bst.binary_search(item_number)
+        if product:
+            print(f"\n Product Found!")
+            print(f"Item Number: {product.item_number}")
+            print(f"Name: {product.product_name}")
+            print(f"Price: ₱{product.price:,.2f}")
+            print(f"Stock: {product.stock}")
+            return product
+        else:
+            print(f"\n Item Number {item_number} not found!")
+            return None
+
+    def display_inventory(self):
+        """Display all products in sorted order"""
+        products = self.bst.inorder_traversal()
+        print("\n COMPLETE INVENTORY (Sorted by Item Number)")
+        print("-" * 75)
+        print(f"{'ITEM NO':<8} {'PRODUCT NAME':<25} {'PRICE':<15} {'STOCK':<8}")
+        print("-" * 75)
+        for p in products:
+            print(f"{p['item_number']:<8} {p['name']:<25} ₱{p['price']:<14,.0f} {p['stock']:<8}")
+        print("-" * 75)
+
+    def process_sale(self, item_number, quantity):
+        """Process a sale"""
+        product = self.search_product(item_number)
+        if not product:
+            return False
+
+        if product.stock < quantity:
+            print(f" Insufficient stock! Only {product.stock} available.")
+            return False
+
+        total = product.price * quantity
+
+        # Create order
+        order = {
+            'id': self.next_order_id,
+            'item_number': item_number,
+            'product_name': product.product_name,
+            'quantity': quantity,
+            'unit_price': product.price,
+            'total': total
+        }
+
+        # Update stock
+        if self.bst.update_stock(item_number, quantity):
+            # Add to processing queue
+            self.order_queue.enqueue(order)
+            self.next_order_id += 1
+            print(f"\n SALE PROCESSED!")
+            print(f"Total: ₱{total:,.2f}")
+            print(f"Order #{order['id']} queued for processing.")
+            return True
+        return False
+
+    def process_next_order(self):
+        """Process next order from queue"""
+        order = self.order_queue.dequeue()
+        if order:
+            print(f"\n Order #{order['id']} PROCESSED!")
+            print(f"Product: {order['product_name']}")
+            print(f"Quantity: {order['quantity']}")
+            print(f"Total: ₱{order['total']:,.2f}")
+        else:
+            print("\n No orders to process!")
+
+    def show_queue_status(self):
+        """Show current queue status"""
+        self.order_queue.display_queue()
+
+
+def main():
+    """Main program menu"""
+    system = InventorySystem()
+
+    while True:
+        print("\n" + "=" * 55)
+        print(" INVENTORY MANAGEMENT SYSTEM (IMS) - Philippines")
+        print("=" * 55)
+        print("1.  Display Inventory")
+        print("2.  Search Product (Binary Search)")
+        print("3.  Add Product")
+        print("4.  Process Sale")
+        print("5.  Show Processing Queue")
+        print("6.  Process Next Order")
+        print("7.  Exit")
+        print("-" * 55)
+
+        choice = input("Enter your choice (1-7): ").strip()
+
+        if choice == '1':
+            system.display_inventory()
+
+        elif choice == '2':
+            try:
+                item_no = int(input("Enter Item Number: "))
+                system.search_product(item_no)
+            except ValueError:
+                print(" Invalid Item Number!")
+
+        elif choice == '3':
+            try:
+                item_no = int(input("Item Number: "))
+                name = input("Product Name: ")
+                price = float(input("Price: ₱"))
+                stock = int(input("Stock: "))
+                system.add_product(item_no, name, price, stock)
+            except ValueError:
+                print(" Invalid input!")
+
+        elif choice == '4':
+            try:
+                item_no = int(input("Item Number: "))
+                qty = int(input("Quantity: "))
+                system.process_sale(item_no, qty)
+            except ValueError:
+                print(" Invalid input!")
+
+        elif choice == '5':
+            system.show_queue_status()
+
+        elif choice == '6':
+            system.process_next_order()
+
+        elif choice == '7':
+            print(" Thank you for using IMS - Philippines!")
+            break
+
+        else:
+            print("Invalid choice!")
+
+if __name__ == "__main__":
+    main()
