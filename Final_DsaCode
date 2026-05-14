@@ -1,0 +1,108 @@
+""" Inventory Management System (IMS) """
+
+class Node:
+    def __init__(self, item_number):
+        self.item_number = item_number
+        self.product_name = self.price = self.stock = 0
+        self.left = self.right = None
+
+class BST:
+    def __init__(self):
+        self.root = None
+
+    def insert(self, item_number, name, price, stock):
+        def _insert(node):
+            if not node: return Node(item_number) if item_number != node.item_number else setattr(node, 'product_name',
+                                                                                                  name) or setattr(node,
+                                                                                                                   'price',
+                                                                                                                   price) or setattr(
+                node, 'stock', stock) or node
+            if item_number < node.item_number:
+                node.left = _insert(node.left)
+            elif item_number > node.item_number:
+                node.right = _insert(node.right)
+            return node
+
+        self.root = _insert(self.root) if self.root else Node(item_number);
+        self.root.product_name = name;
+        self.root.price = price;
+        self.root.stock = stock
+
+    def search(self, item_number):
+        def _search(node): return node if not node else node if item_number == node.item_number else _search(
+            node.left if item_number < node.item_number else node.right)
+
+        return _search(self.root)
+
+    def inorder(self):
+        def _inorder(node, result):
+            if node: _inorder(node.left, result); result.append(
+                (node.item_number, node.product_name, node.price, node.stock)); _inorder(node.right, result)
+
+        result = [];
+        _inorder(self.root, result);
+        return result
+
+    def update_stock(self, item_number, qty):
+        node = self.search(item_number)
+        return node.stock >= qty and setattr(node, 'stock', node.stock - qty) or False
+
+class Queue:
+    def __init__(self): self.items = []
+
+    def enqueue(self, order): self.items.append(order); print(f" Order #{order['id']} queued")
+
+    def dequeue(self): return self.items.pop(0) if self.items else None
+
+    def display(self): [print(f" {i}. Order #{o['id']} - Php{o['total']:,.0f}") for i, o in
+                        enumerate(self.items, 1)] or print("Queue empty")
+
+class IMS:
+    def __init__(self):
+        self.bst = BST();
+        self.q = Queue();
+        self.next_id = 1
+        for i, n, p, s in [(1, "Laptop Dell", 69999, 15), (2, "Samsung S24", 45999, 25), (3, "iPhone 15", 52999, 20),
+                           (4, "Logitech Kit", 2499, 50), (5, "Razer Mouse", 3599, 75), (6, "Sony WH", 24999, 20),
+                           (7, "Samsung SSD", 5999, 40)]:
+            self.bst.insert(i, n, p, s);
+            print("Data loaded")
+
+    def show(self):
+        print("\nINVENTORY");
+        print(f"{'#':<4} {'NAME':<20} {'PRICE':<12} {'STK'}")
+        print("-" * 50);
+        [print(f"{i:<4} {n:<20} Php{p:<11,.0f} {s}") for i, n, p, s in self.bst.inorder()]
+
+    def find(self, no):
+        p = self.bst.search(no)
+        print(
+            f"\n{p.product_name if p else 'NOT FOUND'}\nItem:{p.item_number if p else no} Price:Php{p.price:,.0f if p else 0} Stock:{p.stock if p else 0}")
+        return p
+
+    def add(self, no, name, price, stock):
+        self.bst.insert(no, name, price, stock); print(f"Added: {name}")
+
+    def sale(self, no, qty):
+        p = self.find(no)
+        if p and p.stock >= qty and self.bst.update_stock(no, qty):
+            order = {'id': self.next_id, 'name': p.product_name, 'total': p.price * qty}
+            self.q.enqueue(order);
+            self.next_id += 1;
+            print(f"SALE: Php{order['total']:,.0f}")
+            return True
+        print("Failed");
+        return False
+
+    def next_order(self):
+        o = self.q.dequeue(); print(f"Processed: {o['name'] if o else 'None'}") if o else print("Empty")
+
+def main():
+    s = IMS()
+    m = {"1": s.show, "2": lambda: s.find(int(input("Item#:"))),
+         "3": lambda: s.add(*[input(f"{['#', 'Name', 'Php', 'Stock'][i]}:") for i in range(4)]),
+         "4": lambda: s.sale(int(input("Item#:")), int(input("Qty:"))), "5": s.q.display, "6": s.next_order}
+    while (c := input("\n1:Inv 2:Find 3:Add 4:Sale 5:Queue 6:Next 7:Exit\nChoice:")) != "7": m.get(c, lambda: print(
+        "Invalid"))()
+
+if __name__ == "__main__": main()
